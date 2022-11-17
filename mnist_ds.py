@@ -85,7 +85,17 @@ def main():
         transforms.ToTensor(),
         transforms.Normalize((0.1307,), (0.3081,))
     ])
-    dataset1 = datasets.MNIST('../data', train=True, download=True, transform=transform)
+
+    if torch.distributed.get_rank() != 0:
+        # might be downloading mnist data, let rank 0 download first
+        torch.distributed.barrier()
+
+    dataset1 = datasets.MNIST('./data', train=True, download=True, transform=transform)
+
+    if torch.distributed.get_rank() == 0:
+        # mnist data is downloaded, indicate other ranks can proceed
+        torch.distributed.barrier()
+
     dataset2 = datasets.MNIST('../data', train=False, transform=transform)
     test_loader = torch.utils.data.DataLoader(dataset2, **test_kwargs)
 

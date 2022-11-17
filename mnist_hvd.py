@@ -122,9 +122,18 @@ def main():
         transforms.ToTensor(),
         transforms.Normalize((0.1307,), (0.3081,))
         ])
+
+    if hvd.rank() != 0:
+        # might be downloading mnist data, let rank 0 download first
+        hvd.barrier()
+
     # train_dataset = datasets.MNIST('data-%d' % hvd.rank(), train=True, download=True, transform=transform)
     train_dataset = datasets.MNIST('./data', train=True, download=True, transform=transform)
-    
+
+    if hvd.rank() == 0:
+        # mnist data is downloaded, indicate other ranks can proceed
+        hvd.barrier()
+
     # Horovod: use DistributedSampler to partition the training data.
     train_sampler = dist.DistributedSampler(train_dataset, num_replicas=hvd.size(), rank=hvd.rank())
     train_loader = torch.utils.data.DataLoader(

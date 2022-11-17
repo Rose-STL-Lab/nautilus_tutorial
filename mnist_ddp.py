@@ -138,7 +138,19 @@ def main():
         transforms.ToTensor(),
         transforms.Normalize((0.1307,), (0.3081,))
     ])
+
+    if args.distributed:
+        if torch.distributed.get_rank() != 0:
+            # might be downloading mnist data, let rank 0 download first
+            torch.distributed.barrier()
+
     train_dataset = datasets.MNIST('./data', train=True, download=True, transform=transform)
+
+    if args.distributed:
+        if torch.distributed.get_rank() == 0:
+            # mnist data is downloaded, indicate other ranks can proceed
+            torch.distributed.barrier()
+
     val_dataset = datasets.MNIST('./data', train=False, transform=transform)
     if args.distributed:
         train_sampler = torch.utils.data.distributed.DistributedSampler(train_dataset, shuffle=True)
@@ -171,6 +183,9 @@ def main():
             # Only run validation on GPU 0 process, for simplicity, so we do not run validation on multi gpu.
             if dist.get_rank() == 0:
                 test(model_without_ddp, device, test_loader)
+                torch.distributed.barrier()
+            else:
+                torch.distributed.barrier()
         else:
             test(model, device, test_loader)
         scheduler.step()
@@ -183,7 +198,10 @@ def main():
         else:
             torch.save(model.state_dict(), f"mnist_cnn_.pt")
 
-    return dist.get_rank(), total_time
+    if args.distributed:
+        return dist.get_rank(), total_time
+    else:
+        return 0, total_time
 
 
 if __name__ == '__main__':
