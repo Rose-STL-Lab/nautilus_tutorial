@@ -1,0 +1,12 @@
+{
+  "train_micro_batch_size_per_gpu": 64,
+  "optimizer": {
+    "type": "Adam",
+    "params": {
+      "lr": 0.0005
+    }
+  },
+  "fp16": {
+    "enabled": false
+  }
+}

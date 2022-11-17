@@ -7,16 +7,17 @@ import os
 import time
 import argparse
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from torchvision import datasets, transforms
 from torch.optim.lr_scheduler import StepLR
 import torch.distributed as dist
+from net import Net
+
 
 def init_distributed_mode(args):
     """
-    initilize DDP 
+    Initialize DDP
     """
     os.environ['OMP_NUM_THREADS'] = "1"
     if "RANK" in os.environ and "WORLD_SIZE" in os.environ:
@@ -37,35 +38,12 @@ def init_distributed_mode(args):
 
     torch.cuda.set_device(args.gpu)
     args.dist_backend = "nccl"
-    print(f"| distributed init (rank {args.rank}): {args.dist_url}, local rank:{args.gpu}, world size:{args.world_size}", flush=True)
+    print(
+        f"| distributed init (rank {args.rank}): {args.dist_url}, local rank:{args.gpu}, world size:{args.world_size}",
+        flush=True)
     dist.init_process_group(
         backend=args.dist_backend, init_method=args.dist_url, world_size=args.world_size, rank=args.rank
     )
-
-class Net(nn.Module):
-    def __init__(self):
-        super(Net, self).__init__()
-        self.conv1 = nn.Conv2d(1, 32, 3, 1)
-        self.conv2 = nn.Conv2d(32, 64, 3, 1)
-        self.dropout1 = nn.Dropout(0.25)
-        self.dropout2 = nn.Dropout(0.5)
-        self.fc1 = nn.Linear(9216, 128)
-        self.fc2 = nn.Linear(128, 10)
-
-    def forward(self, x):
-        x = self.conv1(x)
-        x = F.relu(x)
-        x = self.conv2(x)
-        x = F.relu(x)
-        x = F.max_pool2d(x, 2)
-        x = self.dropout1(x)
-        x = torch.flatten(x, 1)
-        x = self.fc1(x)
-        x = F.relu(x)
-        x = self.dropout2(x)
-        x = self.fc2(x)
-        output = F.log_softmax(x, dim=1)
-        return output
 
 
 def train(args, model, device, train_loader, optimizer, epoch):
@@ -81,13 +59,13 @@ def train(args, model, device, train_loader, optimizer, epoch):
             if dist.get_rank() == 0:
                 if batch_idx % args.log_interval == 0:
                     print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
-                         epoch, dist.get_world_size() * batch_idx * len(data), len(train_loader.dataset),
-                         100. * batch_idx / len(train_loader), loss.item()))
+                        epoch, dist.get_world_size() * batch_idx * len(data), len(train_loader.dataset),
+                               100. * batch_idx / len(train_loader), loss.item()))
         else:
             if batch_idx % args.log_interval == 0:
                 print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
-                       epoch,  batch_idx * len(data), len(train_loader.dataset),
-                       100. * batch_idx / len(train_loader), loss.item()))
+                    epoch, batch_idx * len(data), len(train_loader.dataset),
+                           100. * batch_idx / len(train_loader), loss.item()))
         if args.dry_run:
             break
 
@@ -156,20 +134,20 @@ def main():
         train_kwargs.update(cuda_kwargs)
         test_kwargs.update(cuda_kwargs)
 
-    transform=transforms.Compose([
+    transform = transforms.Compose([
         transforms.ToTensor(),
         transforms.Normalize((0.1307,), (0.3081,))
-        ])
+    ])
     train_dataset = datasets.MNIST('./data', train=True, download=True, transform=transform)
-    val_dataset   = datasets.MNIST('./data', train=False, transform=transform)
+    val_dataset = datasets.MNIST('./data', train=False, transform=transform)
     if args.distributed:
         train_sampler = torch.utils.data.distributed.DistributedSampler(train_dataset, shuffle=True)
     else:
         train_sampler = torch.utils.data.RandomSampler(train_dataset)
     test_sampler = torch.utils.data.SequentialSampler(val_dataset)
 
-    train_loader = torch.utils.data.DataLoader(train_dataset, sampler = train_sampler, **train_kwargs)
-    test_loader = torch.utils.data.DataLoader(val_dataset, sampler = test_sampler, **test_kwargs)
+    train_loader = torch.utils.data.DataLoader(train_dataset, sampler=train_sampler, **train_kwargs)
+    test_loader = torch.utils.data.DataLoader(val_dataset, sampler=test_sampler, **test_kwargs)
 
     model = Net().to(device)
     model_without_ddp = model
@@ -180,12 +158,17 @@ def main():
     optimizer = optim.Adadelta(model.parameters(), lr=args.lr)
 
     scheduler = StepLR(optimizer, step_size=1, gamma=args.gamma)
+
+    total_time = 0.
+
     for epoch in range(1, args.epochs + 1):
         if args.distributed:
             train_sampler.set_epoch(epoch)
+        start = time.time()
         train(args, model, device, train_loader, optimizer, epoch)
+        total_time += time.time() - start
         if args.distributed:
-            # Only run validation on GPU 0 process, for simplity, so we do not run validation on multi gpu. 
+            # Only run validation on GPU 0 process, for simplicity, so we do not run validation on multi gpu.
             if dist.get_rank() == 0:
                 test(model_without_ddp, device, test_loader)
         else:
@@ -200,8 +183,9 @@ def main():
         else:
             torch.save(model.state_dict(), f"mnist_cnn_.pt")
 
+    return dist.get_rank(), total_time
+
 
 if __name__ == '__main__':
-    start = time.time()
-    main()
-    print(f'Total time elapsed: {time.time() - start} seconds')
+    rk, tt = main()
+    print(f'[{rk}] Total time elapsed: {tt} seconds')
