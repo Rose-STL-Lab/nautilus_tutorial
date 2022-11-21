@@ -19,7 +19,7 @@ def train(args, model, train_loader, epoch):
         loss = F.nll_loss(output, target)
         model.backward(loss)
         model.step()
-        if dist.get_rank() == 0:
+        if torch.distributed.get_rank() == 0:
             if batch_idx % args.log_interval == 0:
                 print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                     epoch, dist.get_world_size() * batch_idx * len(data), len(train_loader.dataset),
@@ -41,7 +41,7 @@ def test(model, device, test_loader):
 
     test_loss /= len(test_loader.dataset)
 
-    if dist.get_rank() == 0:
+    if torch.distributed.get_rank() == 0:
         print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
             test_loss, correct, len(test_loader.dataset),
             100. * correct / len(test_loader.dataset)))
@@ -120,4 +120,4 @@ def main():
 
 
 if __name__ == '__main__':
-    print(f'[{dist.get_rank()}] Total time elapsed: {main()} seconds')
+    print(f'[{torch.distributed.get_rank()}] Total time elapsed: {main()} seconds')
