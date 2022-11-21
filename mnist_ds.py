@@ -19,7 +19,7 @@ def train(args, model, train_loader, epoch):
         loss = F.nll_loss(output, target)
         model.backward(loss)
         model.step()
-        if torch.distributed.get_rank() == 0:
+        if dist.get_rank() == 0:
             if batch_idx % args.log_interval == 0:
                 print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                     epoch, dist.get_world_size() * batch_idx * len(data), len(train_loader.dataset),
@@ -41,7 +41,7 @@ def test(model, device, test_loader):
 
     test_loss /= len(test_loader.dataset)
 
-    if torch.distributed.get_rank() == 0:
+    if dist.get_rank() == 0:
         print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
             test_loss, correct, len(test_loader.dataset),
             100. * correct / len(test_loader.dataset)))
@@ -86,17 +86,17 @@ def main():
         transforms.Normalize((0.1307,), (0.3081,))
     ])
 
-    if torch.distributed.get_rank() != 0:
+    if dist.get_rank() != 0:
         # might be downloading mnist data, let rank 0 download first
-        torch.distributed.barrier()
+        dist.barrier()
 
     dataset1 = datasets.MNIST('./data', train=True, download=True, transform=transform)
 
-    if torch.distributed.get_rank() == 0:
+    if dist.get_rank() == 0:
         # mnist data is downloaded, indicate other ranks can proceed
-        torch.distributed.barrier()
+        dist.barrier()
 
-    dataset2 = datasets.MNIST('../data', train=False, transform=transform)
+    dataset2 = datasets.MNIST('./data', train=False, transform=transform)
     test_loader = torch.utils.data.DataLoader(dataset2, **test_kwargs)
 
     net = Net().to(device)
@@ -120,4 +120,4 @@ def main():
 
 
 if __name__ == '__main__':
-    print(f'[{torch.distributed.get_rank()}] Total time elapsed: {main()} seconds')
+    print(f'[{dist.get_rank()}] Total time elapsed: {main()} seconds')
