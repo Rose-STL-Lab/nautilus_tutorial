@@ -1,4 +1,4 @@
-FROM nvidia/cuda:11.8.0-devel-ubuntu22.04
+FROM nvidia/cuda:11.7.1-devel-ubuntu20.04
 
 ##############################################################################
 # Temporary Installation Directory
@@ -9,6 +9,8 @@ RUN mkdir -p ${STAGE_DIR}
 ##############################################################################
 # Installation/Basic Utilities
 ##############################################################################
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=America/Los_Angeles
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     software-properties-common build-essential autotools-dev \
@@ -17,7 +19,7 @@ RUN apt-get update && \
     curl wget vim tmux emacs less unzip \
     htop iftop iotop ca-certificates openssh-client openssh-server \
     rsync iputils-ping net-tools sudo \
-    llvm-14-dev
+    llvm-11-dev
 
 ##############################################################################
 # Installation Latest Git
@@ -41,11 +43,11 @@ RUN cp /etc/ssh/sshd_config ${STAGE_DIR}/sshd_config && \
 ENV MLNX_OFED_VERSION=5.7-1.0.2.0
 RUN apt-get install -y libnuma-dev
 RUN cd ${STAGE_DIR} && \
-    wget -q -O - http://www.mellanox.com/downloads/ofed/MLNX_OFED-${MLNX_OFED_VERSION}/MLNX_OFED_LINUX-${MLNX_OFED_VERSION}-ubuntu22.04-x86_64.tgz | tar xzf - && \
-    cd MLNX_OFED_LINUX-${MLNX_OFED_VERSION}-ubuntu22.04-x86_64 && \
+    wget -q -O - http://www.mellanox.com/downloads/ofed/MLNX_OFED-${MLNX_OFED_VERSION}/MLNX_OFED_LINUX-${MLNX_OFED_VERSION}-ubuntu20.04-x86_64.tgz | tar xzf - && \
+    cd MLNX_OFED_LINUX-${MLNX_OFED_VERSION}-ubuntu20.04-x86_64 && \
     ./mlnxofedinstall --user-space-only --without-fw-update --all -q && \
     cd ${STAGE_DIR} && \
-    rm -rf ${STAGE_DIR}/MLNX_OFED_LINUX-${MLNX_OFED_VERSION}-ubuntu22.04-x86_64*
+    rm -rf ${STAGE_DIR}/MLNX_OFED_LINUX-${MLNX_OFED_VERSION}-ubuntu20.04-x86_64*
 
 ##############################################################################
 # nv_peer_mem
@@ -90,7 +92,6 @@ RUN mv /usr/local/mpi/bin/mpirun /usr/local/mpi/bin/mpirun.real && \
 ##############################################################################
 # Python
 ##############################################################################
-ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHON_VERSION=3
 RUN apt-get install -y python3 python3-dev && \
     rm -f /usr/bin/python && \
@@ -169,11 +170,11 @@ RUN rm -rf /usr/lib/python3/dist-packages/yaml && \
 # DeepSpeed
 ##############################################################################
 RUN git clone https://github.com/microsoft/DeepSpeed.git ${STAGE_DIR}/DeepSpeed
-RUN pip install ninja
+RUN pip install triton==1.0.0
 RUN cd ${STAGE_DIR}/DeepSpeed && \
     git checkout . && \
     git checkout master && \
-    DS_BUILD_FUSED_LAMB=1 DS_BUILD_FUSED_ADAM=1 DS_BUILD_TRANSFORMER=1 DS_BUILD_TRANSFORMER_INFERENCE=1 DS_BUILD_STOCHASTIC_TRANSFORMER=1 DS_BUILD_UTILS=1 DS_BUILD_AIO=1 DS_BUILD_CPU_ADAM=1 pip install .
+    DS_BUILD_OPS=1 pip install .
 RUN rm -rf ${STAGE_DIR}/DeepSpeed
 RUN python -c "import deepspeed; print(deepspeed.__version__)" && ds_report
 

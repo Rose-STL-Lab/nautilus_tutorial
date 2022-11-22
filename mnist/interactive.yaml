@@ -1,0 +1,48 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: stpp
+spec:
+  containers:
+  - name: gpu-container
+    # torch113_cuda117_ds076
+    # image: docker.io/deepspeed/deepspeed:v072_torch112_cu117
+    image: docker.io/zihaokevinzhou/deepspeed:torch113_cuda117_ds076
+    imagePullPolicy: Always
+    command: ["sleep", "infinity"]
+    volumeMounts:
+    - mountPath: /stpp-vol
+      name: stpp-vol        
+    - mountPath: /dev/shm
+      name: dev-shm
+    resources:
+      limits:
+        nvidia.com/gpu: "1"
+        memory: "20G"
+        cpu: "12"
+      requests:
+        nvidia.com/gpu: "1"
+        memory: "8G"
+        cpu: "4"
+  restartPolicy: Never
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: nvidia.com/gpu.product
+            operator: In
+            values:
+            - NVIDIA-GeForce-RTX-3090
+          - key: kubernetes.io/hostname
+            operator: In
+            values:
+            - k8s-3090-02.clemson.edu
+  volumes:
+    - name: stpp-vol
+      persistentVolumeClaim:
+        claimName: stpp-vol
+    - name: dev-shm
+      emptyDir:
+        medium: Memory
+        sizeLimit: 1Gi

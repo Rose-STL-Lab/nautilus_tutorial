@@ -1,0 +1,55 @@
+###############################
+# MNIST k8s SingleGPU Example #
+###############################
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: mnist
+  namespace: deep-forecast
+spec:
+  template:
+    spec:
+      containers:
+      - name: gpu-container
+        image: docker.io/horovod/horovod:sha-811cf67
+        command: ["/bin/bash","-c"]
+        # NCCL_DEBUG=INFO
+        args: ["git clone https://github.com/Rose-STL-Lab/nautilus_tutorial.git;
+                cd nautilus_tutorial;
+                python mnist_ddp.py --batch-size 64 --epochs 10"]
+        volumeMounts:
+        - mountPath: /stpp-vol
+          name: stpp-vol
+        - mountPath: /dev/shm
+          name: dev-shm
+        resources:
+          limits:
+            nvidia.com/gpu: "4"
+            memory: "20G"
+            cpu: "12"
+          requests:
+            nvidia.com/gpu: "4"
+            memory: "8G"
+            cpu: "4"
+      restartPolicy: Never
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nvidia.com/gpu.product
+                operator: In
+                values:
+                - NVIDIA-GeForce-RTX-3090
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - k8s-3090-02.clemson.edu
+      volumes:
+        - name: stpp-vol
+          persistentVolumeClaim:
+            claimName: stpp-vol
+        - name: dev-shm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 1Gi
