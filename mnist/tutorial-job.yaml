@@ -1,0 +1,32 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: tutorial-job
+spec:
+  template:
+    spec:
+      containers:
+      - name: gpu-container
+        image: gitlab-registry.nrp-nautilus.io/zihaozhou/nautilus_tutorial:jupyterhub
+        command: ["/bin/bash","-c"]
+        args: ["mkdir MNIST; cd MNIST;
+                wget https://raw.githubusercontent.com/pytorch/examples/main/mnist/main.py;
+                python main.py --save-model;
+                mv mnist_cnn.pt /tutorial"]
+        volumeMounts:
+        - mountPath: /tutorial
+          name: tutorial-volume
+        resources:
+          limits:
+            nvidia.com/gpu: "1"
+            memory: "8G"
+            cpu: "4"
+          requests:
+            nvidia.com/gpu: "1"
+            memory: "8G"
+            cpu: "4"
+      restartPolicy: Never
+      volumes:
+        - name: tutorial-volume
+          persistentVolumeClaim:
+            claimName: tutorial-volume
