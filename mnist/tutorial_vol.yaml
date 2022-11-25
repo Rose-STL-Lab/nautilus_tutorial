@@ -3,6 +3,7 @@ kind: PersistentVolumeClaim
 metadata:
   name: tutorial-volume
 spec:
+  storageClassName: seaweedfs-storage-nvme
   accessModes:
   - ReadWriteMany
   resources:

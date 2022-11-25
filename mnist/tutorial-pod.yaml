@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: tutorial-pod
+spec:
+  containers:
+  - name: gpu-container
+    image: gitlab-registry.nrp-nautilus.io/zihaozhou/nautilus_tutorial:jupyterhub
+    command: ["jupyter", "lab", "--NotebookApp.token=627a7b3b"]
+    volumeMounts:
+    - mountPath: /tutorial
+      name: tutorial-volume
+    resources:
+      limits:
+        nvidia.com/gpu: "1"
+        memory: "8G"
+        cpu: "4"
+  restartPolicy: Never
+  volumes:
+    - name: tutorial-volume
+      persistentVolumeClaim:
+        claimName: tutorial-volume
