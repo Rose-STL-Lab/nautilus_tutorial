@@ -7,7 +7,7 @@ spec:
   - name: gpu-container
     # torch113_cuda117_ds076
     # image: docker.io/deepspeed/deepspeed:v072_torch112_cu117
-    image: docker.io/zihaokevinzhou/deepspeed:torch113_cuda117_ds076
+    image: gitlab-registry.nrp-nautilus.io/zihaozhou/nautilus_tutorial:torch113_cuda117_ds076
     imagePullPolicy: Always
     command: ["sleep", "infinity"]
     volumeMounts:
@@ -34,10 +34,6 @@ spec:
             operator: In
             values:
             - NVIDIA-GeForce-RTX-3090
-          - key: kubernetes.io/hostname
-            operator: In
-            values:
-            - k8s-3090-02.clemson.edu
   volumes:
     - name: stpp-vol
       persistentVolumeClaim:

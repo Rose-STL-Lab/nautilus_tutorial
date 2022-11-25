@@ -5,13 +5,12 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: mnist
-  namespace: deep-forecast
 spec:
   template:
     spec:
       containers:
       - name: gpu-container
-        image: docker.io/horovod/horovod:sha-811cf67
+        image: gitlab-registry.nrp-nautilus.io/zihaozhou/nautilus_tutorial:hovorod
         command: ["/bin/bash","-c"]
         # NCCL_DEBUG=INFO
         args: ["git clone https://github.com/Rose-STL-Lab/nautilus_tutorial.git;
@@ -41,10 +40,6 @@ spec:
                 operator: In
                 values:
                 - NVIDIA-GeForce-RTX-3090
-              - key: kubernetes.io/hostname
-                operator: In
-                values:
-                - k8s-3090-02.clemson.edu
       volumes:
         - name: stpp-vol
           persistentVolumeClaim:
