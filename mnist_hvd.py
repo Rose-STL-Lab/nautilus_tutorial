@@ -4,13 +4,15 @@
 
 import argparse
 import time
+
+import horovod.torch as hvd
 import torch
 import torch.multiprocessing as mp
 import torch.nn.functional as F
 import torch.optim as optim
-from torchvision import datasets, transforms
 import torch.utils.data.distributed as dist
-import horovod.torch as hvd
+from torchvision import datasets, transforms
+
 from net import Net
 
 # Training settings

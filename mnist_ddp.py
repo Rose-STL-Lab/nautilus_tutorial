@@ -2,16 +2,17 @@
 # Reference: https://blog.csdn.net/u010900574/article/details/122780585 #
 #########################################################################
 
-from __future__ import print_function
+import argparse
 import os
 import time
-import argparse
+
 import torch
+import torch.distributed as dist
 import torch.nn.functional as F
 import torch.optim as optim
-from torchvision import datasets, transforms
 from torch.optim.lr_scheduler import StepLR
-import torch.distributed as dist
+from torchvision import datasets, transforms
+
 from net import Net
 
 

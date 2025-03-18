@@ -1,13 +1,13 @@
-from __future__ import print_function
-import time
 import argparse
+import time
+
+import deepspeed
 import torch
 import torch.nn.functional as F
-from torchvision import datasets, transforms
-from net import Net
-import deepspeed
 from deepspeed import comm as dist
+from torchvision import datasets, transforms
 
+from net import Net
 
 deepspeed.init_distributed()
 

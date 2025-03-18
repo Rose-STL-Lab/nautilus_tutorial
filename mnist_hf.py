@@ -1,15 +1,16 @@
-from __future__ import print_function
+import argparse
 import os
 import time
-import argparse
+
 import torch
 import torch.nn.functional as F
 import torch.optim as optim
-from torchvision import datasets, transforms
-from torch.optim.lr_scheduler import StepLR
-from net import Net
 from accelerate import Accelerator
 from accelerate.state import AcceleratorState
+from torch.optim.lr_scheduler import StepLR
+from torchvision import datasets, transforms
+
+from net import Net
 
 accelerator = Accelerator()
 local_rank = int(os.environ.get("LOCAL_RANK", -1))
