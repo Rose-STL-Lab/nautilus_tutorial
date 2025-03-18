@@ -58,14 +58,26 @@ def train(args, model, device, train_loader, optimizer, epoch):
         if args.distributed:
             if dist.get_rank() == 0:
                 if batch_idx % args.log_interval == 0:
-                    print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
-                        epoch, dist.get_world_size() * batch_idx * len(data), len(train_loader.dataset),
-                               100. * batch_idx / len(train_loader), loss.item()))
+                    print(
+                        "Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}".format(
+                            epoch,
+                            dist.get_world_size() * batch_idx * len(data),
+                            len(train_loader.dataset),
+                            100.0 * batch_idx / len(train_loader),
+                            loss.item(),
+                        )
+                    )
         else:
             if batch_idx % args.log_interval == 0:
-                print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
-                    epoch, batch_idx * len(data), len(train_loader.dataset),
-                           100. * batch_idx / len(train_loader), loss.item()))
+                print(
+                    "Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}".format(
+                        epoch,
+                        batch_idx * len(data),
+                        len(train_loader.dataset),
+                        100.0 * batch_idx / len(train_loader),
+                        loss.item(),
+                    )
+                )
         if args.dry_run:
             break
 
