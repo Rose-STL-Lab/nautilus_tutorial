@@ -12,7 +12,7 @@ spec:
     command: ["sleep", "infinity"]
     volumeMounts:
     - mountPath: /stpp-vol
-      name: stpp-vol        
+      name: stpp-vol
     - mountPath: /dev/shm
       name: dev-shm
     resources:
