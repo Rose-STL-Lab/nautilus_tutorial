@@ -6,19 +6,19 @@ ci:
 
 repos:
   - repo: https://github.com/asottile/pyupgrade
-    rev: v3.15.2
+    rev: v3.19.1
     hooks:
       - id: pyupgrade
         args: [--py36-plus]
 
   - repo: https://github.com/PyCQA/isort
-    rev: 5.13.2
+    rev: 6.0.1
     hooks:
       - id: isort
         additional_dependencies: [toml]
 
   - repo: https://github.com/pycqa/flake8
-    rev: 7.0.0
+    rev: 7.2.0
     hooks:
       - id: flake8
         args:
@@ -26,7 +26,7 @@ repos:
           - --ignore=E402,E731,F541,W291,E122,E127,F401,E266,E241,C901,E741,W293,F811,W503,E203,F403,F405
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.6.0
+    rev: v5.0.0
     hooks:
       - id: end-of-file-fixer
       - id: mixed-line-ending
